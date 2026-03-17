@@ -1,31 +1,23 @@
 {
-  "name": "vans-assistant",
-  "version": "5.3.0",
-  "description": "VANS ASSISTANT - WhatsApp Bot powered by Baileys",
-  "main": "rete.js",
+  "name": "zang-bot",
+  "version": "1.0.0",
+  "description": "ZangBot - Telegram Bot with WhatsApp Sender",
+  "main": "zang.js",
   "scripts": {
-    "start": "node rete.js",
-    "dev": "nodemon rete.js"
+    "start": "node zang.js",
+    "dev": "nodemon zang.js"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^6.7.9",
-    "axios": "^1.6.8",
-    "canvas": "^2.11.2",
-    "chalk": "^4.1.2",
-    "form-data": "^4.0.0",
-    "fs-extra": "^11.2.0",
-    "jimp": "^1.6.0",
-    "node-cache": "^5.1.2",
-    "pino": "^8.19.0",
-    "sharp": "^0.33.3"
+    "@whiskeysockets/baileys": "^6.7.16",
+    "pino": "^8.21.0",
+    "qrcode": "^1.5.4",
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.7"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "author": "VANS ASSISTANT",
-  "license": "MIT"
+  }
 }
