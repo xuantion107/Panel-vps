@@ -13,8 +13,6 @@ const https      = require('https');
 // ============= KONFIGURASI =============
 const BOT_TOKEN          = '8012579180:AAE-MqM151HprLTCBAJUFS5CpLv3U_csNT4';
 const ADMIN_IDS          = [8496726839, 987654321];
-const FORCE_JOIN_GROUP   = '';
-const FORCE_JOIN_CHANNEL = '';
 const CEO_USERNAME       = '@XIXI8778';
 const DB_FILE            = 'bot_database.db';
 const TEMP_FOLDER        = 'temp_files';
@@ -60,11 +58,6 @@ const LANGUAGES = {
     btn_done      : '✅ Selesai',
     btn_cancel    : '❌ Batal',
     btn_admin     : '🔐 Panel Admin',
-    must_join     : '⚠️ Anda harus join Group dan Channel dulu!',
-    join_group    : '📢 Join Group',
-    join_channel  : '📣 Join Channel',
-    check_join    : '✅ Saya Sudah Join',
-    not_joined    : '❌ Anda belum join!\n\nSilakan join dulu lalu klik "Saya Sudah Join".',
     vip_required  : '⚠️ *Fitur Premium*\n\nFree trial Anda habis!\nUpgrade ke Premium untuk melanjutkan.',
     send_file     : '📄 Silakan kirim file',
     lang_select   : '🌐 Pilih Bahasa',
@@ -94,11 +87,6 @@ const LANGUAGES = {
     btn_done      : '✅ Done',
     btn_cancel    : '❌ Cancel',
     btn_admin     : '🔐 Admin Panel',
-    must_join     : '⚠️ You must join the Group and Channel first!',
-    join_group    : '📢 Join Group',
-    join_channel  : '📣 Join Channel',
-    check_join    : '✅ I Have Joined',
-    not_joined    : '❌ You have not joined!\n\nPlease join first then click "I Have Joined".',
     vip_required  : '⚠️ *Premium Feature*\n\nYour free trial expired!\nUpgrade to Premium to continue.',
     send_file     : '📄 Please send file',
     lang_select   : '🌐 Select Language',
@@ -210,37 +198,6 @@ async function dlFile(fileId, savePath) {
     const f = fs.createWriteStream(savePath);
     https.get(url, r => { r.pipe(f); f.on('finish', ()=>{ f.close(); res(); }); }).on('error', e=>{ fs.unlink(savePath,()=>{}); rej(e); });
   });
-}
-
-async function checkMember(uid) {
-  const ok = ['member','administrator','creator','restricted'];
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const gm = await bot.getChatMember(FORCE_JOIN_GROUP, uid);
-      const cm = await bot.getChatMember(FORCE_JOIN_CHANNEL, uid);
-      if (ok.includes(gm.status) && ok.includes(cm.status)) return true;
-      // Jika salah satu belum join, cek mana yang belum
-      return { group: ok.includes(gm.status), channel: ok.includes(cm.status) };
-    } catch(e) {
-      if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-  return false;
-}
-
-async function showForceJoin(chatId, uid, status = null) {
-  const t = LANGUAGES[db.getLang(uid)]||LANGUAGES.id;
-  let msg = t.must_join;
-  if (status && typeof status === 'object') {
-    const groupIcon  = status.group   ? '✅' : '❌';
-    const chanIcon   = status.channel ? '✅' : '❌';
-    msg = `⚠️ *Wajib Join dulu!*\n\n${groupIcon} Group: ${status.group ? 'Sudah join' : 'Belum join'}\n${chanIcon} Channel: ${status.channel ? 'Sudah join' : 'Belum join'}`;
-  }
-  await bot.sendMessage(chatId, msg, { parse_mode: 'Markdown', reply_markup: { inline_keyboard: [
-    [{ text: t.join_group,   url: `https://t.me/${FORCE_JOIN_GROUP.slice(1)}` }],
-    [{ text: t.join_channel, url: `https://t.me/${FORCE_JOIN_CHANNEL.slice(1)}` }],
-    [{ text: t.check_join,   callback_data: 'check_membership' }]
-  ]}});
 }
 
 // files = array of { path, name }
@@ -423,10 +380,6 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
   let ref=null;
   if (match&&match[1]&&match[1].startsWith('ref')) { const r=parseInt(match[1].slice(3)); if(!isNaN(r)) ref=r; }
   db.addUser(uid, msg.from.username||'', msg.from.first_name||'', ref);
-  if (!isAdmin(uid)) {
-    const memberStatus = await checkMember(uid);
-    if (memberStatus !== true) { await showForceJoin(chatId, uid, memberStatus); return; }
-  }
   clear(uid);
   await sendMain(chatId, uid, msg.from.first_name);
 });
@@ -444,49 +397,6 @@ bot.on('callback_query', async (query) => {
 
   // BACK / CANCEL → Main Menu
   if (data==='back_main') { clear(uid); await editMain(chatId,msgId,uid,query.from.first_name); return; }
-
-  // CHECK MEMBERSHIP
-  if (data==='check_membership') {
-    await bot.answerCallbackQuery(query.id, { text: '🔍 Mengecek keanggotaan...' });
-    // Edit pesan jadi loading dulu
-    try {
-      await bot.editMessageText(
-        '🔍 *Sedang mengecek keanggotaan...*\nMohon tunggu sebentar.',
-        { chat_id: chatId, message_id: msgId, parse_mode: 'Markdown' }
-      );
-    } catch(e){}
-
-    const memberStatus = await checkMember(uid);
-    const t = LANGUAGES[db.getLang(uid)]||LANGUAGES.id;
-
-    if (memberStatus === true) {
-      // Sudah join semua - berikan akses
-      try {
-        await bot.editMessageText(
-          '✅ *Verifikasi berhasil!*\nSelamat datang! Mengalihkan ke menu...',
-          { chat_id: chatId, message_id: msgId, parse_mode: 'Markdown' }
-        );
-      } catch(e){}
-      await new Promise(r => setTimeout(r, 1000));
-      await sendMain(chatId, uid, query.from.first_name);
-    } else {
-      // Belum join - tampilkan status detail
-      const groupIcon  = (memberStatus && memberStatus.group)   ? '✅' : '❌';
-      const chanIcon   = (memberStatus && memberStatus.channel) ? '✅' : '❌';
-      const msg = `⚠️ *Belum bergabung semua!*\n\n${groupIcon} Group: ${memberStatus && memberStatus.group ? 'Sudah join' : 'Belum join'}\n${chanIcon} Channel: ${memberStatus && memberStatus.channel ? 'Sudah join' : 'Belum join'}\n\nSilakan join lalu klik tombol cek lagi.`;
-      try {
-        await bot.editMessageText(msg, {
-          chat_id: chatId, message_id: msgId, parse_mode: 'Markdown',
-          reply_markup: { inline_keyboard: [
-            [{ text: t.join_group,   url: `https://t.me/${FORCE_JOIN_GROUP.slice(1)}` }],
-            [{ text: t.join_channel, url: `https://t.me/${FORCE_JOIN_CHANNEL.slice(1)}` }],
-            [{ text: '🔄 Cek Lagi', callback_data: 'check_membership' }]
-          ]}
-        });
-      } catch(e){}
-    }
-    return;
-  }
 
   // LANGUAGE
   if (data==='f_lang') {
