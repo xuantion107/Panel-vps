@@ -1,23 +1,21 @@
 {
-  "name": "zang-bot",
+  "name": "premium-vcf-bot",
   "version": "1.0.0",
-  "description": "ZangBot - Telegram Bot with WhatsApp Sender",
+  "description": "Premium VCF Bot - Telegram Bot dengan Sistem VIP",
   "main": "zang.js",
   "scripts": {
-    "start": "node zang.js",
-    "dev": "nodemon zang.js"
+    "start": "node zang.js"
   },
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "^6.7.16",
-    "pino": "^8.21.0",
-    "qrcode": "^1.5.4",
-    "telegraf": "^4.16.3"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.7"
+    "node-telegram-bot-api": "^0.66.0",
+    "better-sqlite3": "^9.4.3",
+    "axios": "^1.6.7",
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.7.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "author": "",
+  "license": "ISC"
 }
